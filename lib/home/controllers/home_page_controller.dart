@@ -1,6 +1,6 @@
 import 'package:assignment_2/services/user_services.dart';
 import 'package:get/get.dart';
-import '../model/user.dart';
+import '../../model/user.dart';
 
 class MainPageController extends GetxController {
   var userList = <User>[].obs;

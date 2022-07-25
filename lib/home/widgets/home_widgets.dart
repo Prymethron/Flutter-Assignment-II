@@ -1,45 +1,13 @@
+import 'package:assignment_2/home/utilities/utilities.dart';
 import 'package:assignment_2/languages/language.dart';
+import 'package:assignment_2/model/user.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:validators/validators.dart';
-import '../controllers/main_page_controller.dart';
 
-class MainPage extends StatelessWidget with ProjectPaddings {
-  MainPage({Key? key}) : super(key: key);
-  final MainPageController mainPageController = Get.put(MainPageController());
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-        body: Padding(
-      padding: ProjectPaddings().cardPaddings,
-      child: GetBuilder(
-          init: MainPageController(),
-          builder: (context) {
-            if (mainPageController.isLoading.value) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
-            } else if (mainPageController.userList.isEmpty) {
-              return const Center(child: Text(ProjectLanguage.emptyUserList));
-            }
-            return RefreshIndicator(
-              onRefresh: mainPageController.fetchUsers,
-              child: ListView.builder(
-                  itemCount: mainPageController.userList.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    return PersonCard(
-                      mainPageController: mainPageController,
-                      index: index,
-                    );
-                  }),
-            );
-          }),
-    ));
-  }
-}
+import '../controllers/home_page_controller.dart';
 
 class PersonCard extends StatelessWidget {
   const PersonCard({
@@ -54,17 +22,18 @@ class PersonCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 50.0),
+      padding: ProjectPaddings().paddingBetweenItems,
       child: Card(
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30.0),
+            borderRadius: ProjectRadiuses().generalBorderRadius,
             side: const BorderSide(width: 0.5, color: Colors.grey)),
         child: Column(children: [
-          PersonCardImage(mainPageController: mainPageController, index: index),
+          PersonCardImage(user: mainPageController.userList[index]),
           Padding(
             padding: ProjectPaddings().cardItemPaddings,
             child: PersonCardInfos(
-                mainPageController: mainPageController, index: index),
+              user: mainPageController.userList[index],
+            ),
           ),
           PersonCardButtons(
               mainPageController: mainPageController, index: index)
@@ -89,20 +58,21 @@ class PersonCardButtons extends StatelessWidget {
     return Container(
       height: 55,
       decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-            bottomRight: Radius.circular(30), bottomLeft: Radius.circular(30)),
+        borderRadius: BorderRadius.only(
+          bottomRight: ProjectRadiuses().generalRadiusOnly,
+          bottomLeft: ProjectRadiuses().generalRadiusOnly,
+        ),
         color: Theme.of(context).backgroundColor,
       ),
       child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
         IconButton(
-          onPressed: () {
-            mainPageController.toggleFavouriteStatus(index);
-          },
-          icon: Icon(mainPageController.userList[index].isFavourite
-              ? Icons.favorite
-              : Icons.favorite_border),
-          color: Colors.red,
-        ),
+            onPressed: () {
+              mainPageController.toggleFavouriteStatus(index);
+            },
+            icon: Icon(mainPageController.userList[index].isFavourite
+                ? Icons.favorite
+                : Icons.favorite_border),
+            color: Colors.red),
         IconButton(
             onPressed: () {
               _updateDialog(context);
@@ -264,14 +234,9 @@ Padding _customTextFormField(
 }
 
 class PersonCardInfos extends StatelessWidget {
-  const PersonCardInfos({
-    Key? key,
-    required this.mainPageController,
-    required this.index,
-  }) : super(key: key);
+  const PersonCardInfos({Key? key, required this.user}) : super(key: key);
 
-  final MainPageController mainPageController;
-  final int index;
+  final User user;
 
   @override
   Widget build(BuildContext context) {
@@ -280,23 +245,23 @@ class PersonCardInfos extends StatelessWidget {
         Row(
           children: [
             Text(
-              mainPageController.userList[index].name,
+              user.name,
               style: Theme.of(context).textTheme.headline5,
             ),
           ],
         ),
         CardListTile(
-          type: InformationTypes.mail,
-          title: mainPageController.userList[index].email,
+          type: InformationTypes.mail.index,
+          title: user.email,
           titleIcon: const Icon(Icons.mail),
         ),
         CardListTile(
-          type: InformationTypes.phone,
-          title: mainPageController.userList[index].phone,
+          type: InformationTypes.phone.index,
+          title: user.phone,
           titleIcon: const Icon(Icons.phone),
         ),
         CardListTile(
-          type: InformationTypes.website,
+          type: InformationTypes.website.index,
           title: getWithHttp,
           titleIcon: const Icon(Icons.public),
         ),
@@ -305,37 +270,28 @@ class PersonCardInfos extends StatelessWidget {
   }
 
   String get getWithHttp {
-    if (isURL(mainPageController.userList[index].website) &&
-        mainPageController.userList[index].website.substring(0, 3) != 'http') {
-      return 'http://${mainPageController.userList[index].website}';
+    if (isURL(user.website) && user.website != 'http') {
+      return 'http://${user.website}';
     }
-    return mainPageController.userList[index].website;
+    return user.website;
   }
 }
 
-class InformationTypes {
-  static const int phone = 1;
-  static const int mail = 2;
-  static const int website = 3;
-}
+enum InformationTypes { phone, mail, website }
 
 class PersonCardImage extends StatelessWidget {
-  const PersonCardImage({
-    Key? key,
-    required this.mainPageController,
-    required this.index,
-  }) : super(key: key);
+  const PersonCardImage({Key? key, required this.user}) : super(key: key);
 
-  final MainPageController mainPageController;
-  final int index;
+  final User user;
 
   @override
   Widget build(BuildContext context) {
     return Stack(children: [
       Container(
         decoration: BoxDecoration(
-          borderRadius: const BorderRadius.only(
-              topRight: Radius.circular(30), topLeft: Radius.circular(30)),
+          borderRadius: BorderRadius.only(
+              topRight: ProjectRadiuses().generalRadiusOnly,
+              topLeft: ProjectRadiuses().generalRadiusOnly),
           color: Theme.of(context).backgroundColor,
         ),
         height: ProjectSizes.cardImageHeight,
@@ -352,7 +308,7 @@ class PersonCardImage extends StatelessWidget {
   }
 
   String get _getImagesUrl =>
-      'https://avatars.dicebear.com/v2/avataaars/${mainPageController.userList[index].username}.svg?options[mood][]=happy';
+      'https://avatars.dicebear.com/v2/avataaars/${user.username}.svg?options[mood][]=happy';
 }
 
 class CardListTile extends StatelessWidget {
@@ -365,13 +321,13 @@ class CardListTile extends StatelessWidget {
 
   void _listTileOnTap(int type, String title) {
     switch (type) {
-      case 1:
+      case 0:
         launchUrlString(_getUrlWithTel(title));
         break;
-      case 2:
+      case 1:
         launchUrlString(_getUrlWithMailto(title));
         break;
-      case 3:
+      case 2:
         launchUrlString(title);
         break;
     }
@@ -402,19 +358,4 @@ class CardListTile extends StatelessWidget {
       ),
     );
   }
-}
-
-class ProjectSizes {
-  static const double cardImageHeight = 200;
-  static const double cardImageWidth = 200;
-  static const double cardListTileHeight = 40;
-}
-
-class ProjectPaddings {
-  final EdgeInsets cardPaddings =
-      const EdgeInsets.symmetric(horizontal: 15, vertical: 15);
-  final EdgeInsets cardItemPaddings =
-      const EdgeInsets.symmetric(horizontal: 20, vertical: 30);
-  final EdgeInsets textFormFieldPaddings =
-      const EdgeInsets.symmetric(vertical: 15);
 }
